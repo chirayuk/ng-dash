@@ -1,0 +1,52 @@
+application: ng-dash
+version: wip
+runtime: python27
+threadsafe: true
+api_version: 1
+
+
+libraries:
+- name: webapp2
+  version: latest
+
+- name: endpoints
+  version: 1.0
+
+  # The pycrypto library is used for OAuth 2, and is also a requirement for
+  # endpoints APIs that wish to authenticate users.
+- name: pycrypto
+  version: latest
+
+
+builtins:
+# Enables Appstats at /_ah/stats/ when you enable the event recorder.
+# Refer appengine_config.py for the wsgi middleware that enables the event
+# recorder and
+# https://developers.google.com/appengine/docs/python/tools/appengineconfig
+- appstats: on
+
+
+handlers:
+- url: (/|/index.html)
+  static_files: client/web/index.html
+  upload: client/web/index.html
+
+- url: /(.*\.(dart|js|css|html))$
+  static_files: /client/web/\1
+  upload: client/web/.*\.(dart|js|css|html)$
+
+skip_files:
+# Default patterns skipped by App Engine, which must be repeated since
+# specifying skip_files overrides them otherwise.  See
+# https://developers.google.com/appengine/docs/python/config/appconfig#Skipping_Files.
+- ^(.*/)?app\.yaml
+- ^(.*/)?app\.yml
+- ^(.*/)?index\.yaml
+- ^(.*/)?index\.yml
+- ^(.*/)?#.*#
+- ^(.*/)?.*~
+- ^(.*/)?.*\.py[co]
+- ^(.*/)?.*/RCS/.*
+- ^(.*/)?\..*
+# Skip spec files
+- ^client/.*spec\.*js
