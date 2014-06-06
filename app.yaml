@@ -32,8 +32,9 @@ handlers:
   upload: client/web/index.html
 
 - url: /(.*\.(dart|js|css|html))$
-  static_files: /client/web/\1
+  static_files: client/web/\1
   upload: client/web/.*\.(dart|js|css|html)$
+
 
 skip_files:
 # Default patterns skipped by App Engine, which must be repeated since
