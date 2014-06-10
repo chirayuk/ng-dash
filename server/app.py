@@ -26,24 +26,24 @@ def GetWsgiApp():
 
   routes = [
       RestProtoJsonRoute(r'/api/run/id=<id:\d+>',
-                         methods=['GET'],
+                         methods=['GET', 'PUT'],
                          name='runsById',
                          request_type=models.RunInfo,
                          handler=run_info.run_info_handler,
-                         defaults=dict(id=None, commitSha=None)),
-      RestProtoJsonRoute(r'/api/run/commitSha=<commitSha:\d+>',
+                         defaults=dict(id=None)),
+      RestProtoJsonRoute(r'/api/run/commit_sha=<commit_sha:\d+>',
                          methods=['GET'],
-                         name='runsById',
+                         name='runsByCommitSha',
                          request_type=models.RunInfo,
                          handler=run_info.run_info_handler,
-                         defaults=dict(id=None, commitSha=None)),
+                         defaults=dict(commit_sha=None)),
       RestProtoJsonRoute(r'/api/run',
-                         name='allRuns',
+                         name='runs',
                          request_type=models.RunInfo,
                          handler=run_info.run_info_handler),
       ]
   return webapp2.WSGIApplication(routes, debug=config.debug)
 
 
-# This is our main WSGI application.  We only handle the /api/ URLs.
+# This is our main WSGI application.  It only handles the /api/ URLs.
 wsgi_app = GetWsgiApp()

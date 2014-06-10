@@ -31,18 +31,18 @@ class RunInfoApi(remote.Service):
 
   SHA_PARAM_RESOURCE = endpoints.ResourceContainer(
       message_types.VoidMessage,
-      commitSha=messages.StringField(1))
+      commit_sha=messages.StringField(1))
 
   @endpoints.method(SHA_PARAM_RESOURCE, models.RunInfoCollection,
-                    path="commitSha/{commitSha}", http_method="GET",
+                    path="commit_sha/{commit_sha}", http_method="GET",
                     name="getRunBySha")
   def get_run_by_commit_sha(self, request):
     try:
       return models.RunInfoCollection(
-          items=run_info_handler.GetByCommitSha(request.commitSha))
+          items=run_info_handler.GetByCommitSha(request.commit_sha))
     except (IndexError, TypeError):
-      raise endpoints.NotFoundException("RunInfo[commitSha=%s] not found." %
-                                        (request.commitSha,))
+      raise endpoints.NotFoundException("RunInfo[commit_sha=%s] not found." %
+                                        (request.commit_sha,))
 
   ID_PARAM_RESOURCE = endpoints.ResourceContainer(
       message_types.VoidMessage,
