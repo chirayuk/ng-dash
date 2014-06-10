@@ -54,9 +54,7 @@ RunInfoUserFields = RunInfoFields.difference(RunInfoSystemFields)
 
 class RunInfoModel(Model):
   msg = MessageProperty(
-      RunInfo,
-      indexed_fields=["id", "commit_sha", "tree_sha", "name"]
-      )
+      RunInfo, indexed_fields=["id", "commit_sha", "tree_sha", "name"])
 
   @classmethod
   def Get(cls, id):

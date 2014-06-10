@@ -8,6 +8,8 @@ webapp2 Route.  run_info_handler exposes handlers to manipulate the
 RunInfoModel model in the datastore.
 """
 
+from google.appengine.api import users
+
 from . import models
 from . import utils
 
@@ -27,9 +29,6 @@ def GetById(id):
   return None if result is None else result.msg
 
 
-RunInfo
-
-
 class RunInfoHandler(object):
   def Get(self, id=None, commit_sha=None):
     return GetById(id) if id else GetByCommitSha(commit_sha) if commit_sha else GetAll()
@@ -38,19 +37,20 @@ class RunInfoHandler(object):
     return GetByCommitSha(commit_sha)
 
   def Create(self, msg):
-    msg.createdTimestamp = utils.TimestampUtcNow()
+    msg.creation_timestamp = utils.TimestampUtcNow()
+    current_user = users.get_current_user()
+    if current_user:
+      msg.creator_id = current_user.user_id()
     run_info_model = models.RunInfoModel(msg=msg)
     run_info_model.put()
     msg.id = str(run_info_model.key.id())
     return msg
 
   def Set(self, msg, id):
-    id = str(id)
     run_info_model = models.RunInfoModel.Get(id)
-    for name in RunInfoUserFields:
+    for name in models.RunInfoUserFields:
       setattr(run_info_model.msg, name, getattr(msg, name))
     run_info_model.put()
-    run_info_model.msg.id = id
     return run_info_model.msg
 
 run_info_handler = RunInfoHandler()
