@@ -34,19 +34,7 @@ class RunInfoHandler(object):
   def GetBySha(self, sha):
     return GetBySha(sha)
 
-  def _create_test_data_objects(self, msg)
-    model = TestDataModel()
-    model.name = msg.name
-    model.description = msg.description
-    model.dimensions_json = msg.dimensions_json
-    model.metrics_json = msg.metrics_json
-    model. # ckck
-
   def Create(self, msg):
-    run_info_model = RunInfoModel._model_from_message()
-    # Put all the children into the datastore first
-    child = self._create_test_data_objects(msg.test_data)
-    for child in  # ckck
     msg.createdTimestamp = utils.TimestampUtcNow()
     run_info_model = models.RunInfoModel(msg=msg)
     run_info_model.put()
