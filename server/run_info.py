@@ -17,7 +17,7 @@ def GetAll():
           in models.RunInfoModel.QueryAll()]
 
 
-def GetBySha(commitSha):
+def GetByCommitSha(commitSha):
   return [terms_item.msg for terms_item
           in models.RunInfoModel.QueryBySha(commitSha)]
 
@@ -28,11 +28,11 @@ def GetById(id):
 
 
 class RunInfoHandler(object):
-  def Get(self, id=None):
-    return GetById(id) if id else GetAll()
+  def Get(self, id=None, commitSha=None):
+    return GetById(id) if id else GetByCommitSha(commitSha) if commitSha else GetAll()
 
-  def GetBySha(self, sha):
-    return GetBySha(sha)
+  def GetByCommitSha(self, commitSha):
+    return GetByCommitSha(commitSha)
 
   def Create(self, msg):
     msg.createdTimestamp = utils.TimestampUtcNow()

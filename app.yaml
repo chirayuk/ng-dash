@@ -30,6 +30,9 @@ handlers:
 - url: /_ah/spi/.*
   script: server.endpoints_api.wsgi_app
 
+- url: /api/.*
+  script: server.app.wsgi_app
+
 - url: (/|/index.html)
   static_files: client/web/index.html
   upload: client/web/index.html
