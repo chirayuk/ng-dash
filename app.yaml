@@ -27,6 +27,9 @@ builtins:
 
 
 handlers:
+- url: /ckck
+  script: server.app.wsgi_app
+
 - url: /_ah/spi/.*
   script: server.endpoints_api.wsgi_app
   secure: always

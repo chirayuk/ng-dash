@@ -17,7 +17,12 @@ from protorpc import remote
 
 package = "com.appspot.ng-dash"
 
-api = endpoints.api(name="ngdash", version="v0.1")
+api = endpoints.api(name="ngdash", version="v0.1",
+    auth_level=endpoints.AUTH_LEVEL.REQUIRED,
+    allowed_client_ids=[
+        endpoints.API_EXPLORER_CLIENT_ID,
+        "731555738015-1jln0ahgup4e5njtje4b0f1poadihspt.apps.googleusercontent.com",
+    ])
 
 run_info_handler = run_info.run_info_handler
 
@@ -25,8 +30,16 @@ run_info_handler = run_info.run_info_handler
 class RunInfoApi(remote.Service):
   @endpoints.method(message_types.VoidMessage, models.RunInfoCollection,
                     path="", http_method="GET",
-                    name="listRuns")
+                    name="listRuns",
+                    allowed_client_ids=[
+                        endpoints.API_EXPLORER_CLIENT_ID,
+                        "731555738015-1jln0ahgup4e5njtje4b0f1poadihspt.apps.googleusercontent.com"],
+                    )
   def list_runs(self, unused_request):
+    current_user = endpoints.get_current_user()
+    print("ckck: current_user={0}".format(current_user))
+    if current_user is None:
+        raise endpoints.UnauthorizedException('Invalid token.')
     return models.RunInfoCollection(items=run_info_handler.Get())
 
   SHA_PARAM_RESOURCE = endpoints.ResourceContainer(

@@ -13,6 +13,11 @@ import webapp2
 from google.appengine.api import users
 
 
+class CkckHandler(webapp2.RequestHandler):
+  def get(self, **params):
+    self.response.write(users.create_login_url("/"))
+
+
 def GetWsgiApp():
   """Return the main WSGI application.
 
@@ -28,6 +33,7 @@ def GetWsgiApp():
   RestProtoJsonRoute = rest_handler.RestProtoJsonRoute
 
   routes = [
+      webapp2.Route('/ckck', handler=CkckHandler),
       RestProtoJsonRoute(r'/api/run/id=<id:\d+>',
                          methods=['GET', 'PUT'],
                          name='runsById',
