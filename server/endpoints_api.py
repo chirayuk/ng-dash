@@ -17,12 +17,26 @@ from protorpc import remote
 
 package = "com.appspot.ng-dash"
 
-api = endpoints.api(name="ngdash", version="v0.1",
-    auth_level=endpoints.AUTH_LEVEL.REQUIRED,
-    allowed_client_ids=[
-        endpoints.API_EXPLORER_CLIENT_ID,
-        "731555738015-1jln0ahgup4e5njtje4b0f1poadihspt.apps.googleusercontent.com",
-    ])
+ALLOWED_CLIENT_IDS = [
+  endpoints.API_EXPLORER_CLIENT_ID,
+  "731555738015-hna1v9or40ml5saoqh0b87t3j6fh6juv.apps.googleusercontent.com",
+  "731555738015-jstpm0j9hcsv266fnj098q897n3bcifb.apps.googleusercontent.com",
+]
+
+ADMIN_USER_EMAILS = set((
+  "chirayuk@gmail.com", "chirayu@chirayuk.com", "chirayu@google.com",
+))
+
+
+def _ensure_admin_user():
+  current_user = endpoints.get_current_user()
+  if current_user is None:
+    raise endpoints.UnauthorizedException('Invalid token.')
+  if current_user.email() not in ADMIN_USER_EMAILS:
+    raise endpoints.UnauthorizedException('Not an admin user.')
+
+
+api = endpoints.api(name="ngdash", version="v0.1")
 
 run_info_handler = run_info.run_info_handler
 
@@ -31,15 +45,8 @@ class RunInfoApi(remote.Service):
   @endpoints.method(message_types.VoidMessage, models.RunInfoCollection,
                     path="", http_method="GET",
                     name="listRuns",
-                    allowed_client_ids=[
-                        endpoints.API_EXPLORER_CLIENT_ID,
-                        "731555738015-1jln0ahgup4e5njtje4b0f1poadihspt.apps.googleusercontent.com"],
                     )
   def list_runs(self, unused_request):
-    current_user = endpoints.get_current_user()
-    print("ckck: current_user={0}".format(current_user))
-    if current_user is None:
-        raise endpoints.UnauthorizedException('Invalid token.')
     return models.RunInfoCollection(items=run_info_handler.Get())
 
   SHA_PARAM_RESOURCE = endpoints.ResourceContainer(
@@ -73,8 +80,11 @@ class RunInfoApi(remote.Service):
 
   @endpoints.method(models.RunInfo, models.RunInfo,
                     path="new_run", http_method="POST",
-                    name="newRun")
+                    name="newRun",
+                    auth_level=endpoints.AUTH_LEVEL.REQUIRED,
+                    allowed_client_ids=ALLOWED_CLIENT_IDS)
   def new_run(self, request):
+    _ensure_admin_user()
     try:
       return run_info_handler.Create(request)
     except (IndexError, TypeError):
