@@ -10,6 +10,9 @@ from . import run_info
 import webapp2
 
 
+from google.appengine.api import users
+
+
 def GetWsgiApp():
   """Return the main WSGI application.
 
