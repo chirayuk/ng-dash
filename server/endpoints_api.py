@@ -8,33 +8,16 @@ Exports a WSGI application to serve the Google Cloud Endpoints API for RunInfo.
 """
 
 
+from . import auth
 from . import models
 from . import run_info
+
 import endpoints
 from protorpc import message_types
 from protorpc import messages
 from protorpc import remote
 
 package = "com.appspot.ng-dash"
-
-ALLOWED_CLIENT_IDS = [
-  endpoints.API_EXPLORER_CLIENT_ID,
-  "731555738015-hna1v9or40ml5saoqh0b87t3j6fh6juv.apps.googleusercontent.com",
-  "731555738015-jstpm0j9hcsv266fnj098q897n3bcifb.apps.googleusercontent.com",
-]
-
-ADMIN_USER_EMAILS = set((
-  "chirayuk@gmail.com", "chirayu@chirayuk.com", "chirayu@google.com",
-))
-
-
-def _ensure_admin_user():
-  current_user = endpoints.get_current_user()
-  if current_user is None:
-    raise endpoints.UnauthorizedException('Invalid token.')
-  if current_user.email() not in ADMIN_USER_EMAILS:
-    raise endpoints.UnauthorizedException('Not an admin user.')
-
 
 api = endpoints.api(name="ngdash", version="v0.1")
 
@@ -59,7 +42,7 @@ class RunInfoApi(remote.Service):
   def get_run_by_commit_sha(self, request):
     try:
       return models.RunInfoCollection(
-          items=run_info_handler.GetByCommitSha(request.commit_sha))
+          items=run_info_handler.get_by_commit_sha(request.commit_sha))
     except (IndexError, TypeError):
       raise endpoints.NotFoundException("RunInfo[commit_sha=%s] not found." %
                                         (request.commit_sha,))
@@ -82,9 +65,9 @@ class RunInfoApi(remote.Service):
                     path="new_run", http_method="POST",
                     name="newRun",
                     auth_level=endpoints.AUTH_LEVEL.REQUIRED,
-                    allowed_client_ids=ALLOWED_CLIENT_IDS)
+                    allowed_client_ids=auth.ALLOWED_CLIENT_IDS)
   def new_run(self, request):
-    _ensure_admin_user()
+    auth.ensure_endpoints_user_is_admin()
     try:
       return run_info_handler.Create(request)
     except (IndexError, TypeError):
@@ -92,4 +75,24 @@ class RunInfoApi(remote.Service):
                                         (request.id,))
 
 
-wsgi_app = endpoints.api_server([api], restricted=False)
+auth_api = endpoints.api(name="ngdash_auth", version="v0.1",
+                         auth_level=endpoints.AUTH_LEVEL.REQUIRED,
+                         allowed_client_ids=auth.ALLOWED_CLIENT_IDS)
+
+
+@auth_api.api_class(resource_name="auth", path="auth")
+class AuthApi(remote.Service):
+  @endpoints.method(models.ApiUser, models.ApiUser,
+                    path="register_api_key", http_method="POST",
+                    name="registerApiKey")
+  def update_api_user(self, request):
+    auth.ensure_endpoints_user_is_admin()
+    user = models.ApiUserModel.get_by_email(request.email)
+    if not user:
+      user = models.ApiUser()
+      user.secret_token = auth.create_secret_token()
+      # TODO
+
+
+
+wsgi_app = endpoints.api_server([api, auth_api], restricted=False)

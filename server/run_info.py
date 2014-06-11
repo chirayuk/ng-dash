@@ -14,33 +14,38 @@ from . import models
 from . import utils
 
 
-def GetAll():
+def get_all():
   return [terms_item.msg for terms_item
-          in models.RunInfoModel.QueryAll()]
+          in models.RunInfoModel.query_all()]
 
 
-def GetByCommitSha(commit_sha):
+def get_by_commit_sha(commit_sha):
   return [terms_item.msg for terms_item
-          in models.RunInfoModel.QueryBySha(commit_sha)]
+          in models.RunInfoModel.query_by_sha(commit_sha)]
 
 
-def GetById(id):
+def get_by_id(id):
   result = models.RunInfoModel.Get(id)
   return None if result is None else result.msg
 
 
 class RunInfoHandler(object):
   def Get(self, id=None, commit_sha=None):
-    return GetById(id) if id else GetByCommitSha(commit_sha) if commit_sha else GetAll()
+    if id:
+      return get_by_id(id)
+    elif commit_sha:
+      return get_by_commit_sha(commit_sha)
+    else:
+      return get_all()
 
-  def GetByCommitSha(self, commit_sha):
-    return GetByCommitSha(commit_sha)
+  def get_by_commit_sha(self, commit_sha):
+    return get_by_commit_sha(commit_sha)
 
   def Create(self, msg):
     msg.creation_timestamp = utils.TimestampUtcNow()
     current_user = users.get_current_user()
     if current_user:
-      msg.creator_id = current_user.user_id()
+      msg.creator_email = current_user.email()
     run_info_model = models.RunInfoModel(msg=msg)
     run_info_model.put()
     msg.id = str(run_info_model.key.id())

@@ -9,16 +9,19 @@ canonical model and then define the datastore model in terms of it.
 
 from protorpc import messages
 from protorpc.messages import (
+    BooleanField,
     IntegerField,
+    Message,
     MessageField,
     StringField,
-    Message,
     Variant,
 )
 
 import google.appengine.ext.ndb.msgprop
 from google.appengine.ext.ndb import (
+    Key,
     Model,
+    StringProperty,
 )
 
 ndb = google.appengine.ext.ndb
@@ -26,6 +29,23 @@ MessageProperty = ndb.msgprop.MessageProperty
 
 
 package = "com.appspot.ng-dash"
+
+
+class ApiUser(Message):
+  # Like AppEngine users, the e-mail address here does not have to be a real
+  # or valid e-mail address.
+  email = StringField(1, required=True)
+  is_admin = BooleanField(2)
+  secret_token = StringField(3)
+
+
+class ApiUserModel(Model):
+  msg = MessageProperty(
+      ApiUser, indexed_fields=["email"])
+
+  def get_by_email(cls, email):
+    result = Key(cls, email).get()
+    return None if result is None else result.msg
 
 
 class Data(Message):
@@ -39,7 +59,9 @@ class Data(Message):
 class RunInfo(Message):
   id = StringField(1)
   creation_timestamp = IntegerField(2, variant=Variant.INT32)
-  creator_id = StringField(3)
+  # Might also want to record the API key used when performing ops to track
+  # down when leaked keys were used.
+  creator_email = StringField(3)
   commit_sha = StringField(4, required=True)
   tree_sha = StringField(5)
   name = StringField(6)
@@ -48,7 +70,7 @@ class RunInfo(Message):
 
 
 RunInfoFields = frozenset(RunInfo._Message__by_name)
-RunInfoSystemFields = frozenset(("id", "creation_timestamp", "creator_id"))
+RunInfoSystemFields = frozenset(("id", "creation_timestamp", "creator_email"))
 RunInfoUserFields = RunInfoFields.difference(RunInfoSystemFields)
 
 
@@ -69,11 +91,11 @@ class RunInfoModel(Model):
     return results
 
   @classmethod
-  def QueryAll(cls, limit=20):
+  def query_all(cls, limit=20):
     return cls._fixup_ids(cls.query().fetch(limit))
 
   @classmethod
-  def QueryBySha(cls, sha, limit=20):
+  def query_by_sha(cls, sha, limit=20):
     return cls._fixup_ids(cls.query(cls.msg.commit_sha == sha).fetch(limit))
 
 
