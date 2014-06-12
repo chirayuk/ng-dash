@@ -118,16 +118,19 @@ def RestProtoJsonRoute(template, handler, request_type, methods=None, **kwargs):
     """
 
     def get(self, **params):
+      params["request"] = self.request
       # Get requests have no HTTP message body to be parsed.
       result = handler.Get(**params)
       self.response.write(EncodeProto(result))
 
     def put(self, **params):
+      params["request"] = self.request
       data = DecodeProto(self.request.body) if self.request.body else None
       result = handler.Set(data, **params)
       self.response.write(EncodeProto(result))
 
     def post(self, **params):
+      params["request"] = self.request
       data = DecodeProto(self.request.body) if self.request.body else None
       result = handler.Create(data, **params)
       self.response.write(EncodeProto(result))

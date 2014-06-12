@@ -10,6 +10,7 @@ canonical model and then define the datastore model in terms of it.
 from protorpc import messages
 from protorpc.messages import (
     BooleanField,
+    BytesField,
     IntegerField,
     Message,
     MessageField,
@@ -34,15 +35,17 @@ package = "com.appspot.ng-dash"
 class ApiUser(Message):
   # Like AppEngine users, the e-mail address here does not have to be a real
   # or valid e-mail address.
+  # TODO: secret should be stored in a different table and not here.
   email = StringField(1, required=True)
   is_admin = BooleanField(2)
-  secret_token = StringField(3)
+  secret = StringField(3)
 
 
 class ApiUserModel(Model):
   msg = MessageProperty(
-      ApiUser, indexed_fields=["email"])
+      ApiUser, indexed_fields=["email", "secret"])
 
+  @classmethod
   def get_by_email(cls, email):
     result = Key(cls, email).get()
     return None if result is None else result.msg

@@ -10,6 +10,7 @@ RunInfoModel model in the datastore.
 
 from google.appengine.api import users
 
+from . import auth
 from . import models
 from . import utils
 
@@ -30,7 +31,7 @@ def get_by_id(id):
 
 
 class RunInfoHandler(object):
-  def Get(self, id=None, commit_sha=None):
+  def Get(self, id=None, commit_sha=None, request=None):
     if id:
       return get_by_id(id)
     elif commit_sha:
@@ -41,17 +42,17 @@ class RunInfoHandler(object):
   def get_by_commit_sha(self, commit_sha):
     return get_by_commit_sha(commit_sha)
 
-  def Create(self, msg):
+  def Create(self, msg, request=None):
+    user = auth.ensure_recognized_user(request=request)
     msg.creation_timestamp = utils.TimestampUtcNow()
-    current_user = users.get_current_user()
-    if current_user:
-      msg.creator_email = current_user.email()
+    msg.creator_email = user.email
     run_info_model = models.RunInfoModel(msg=msg)
     run_info_model.put()
     msg.id = str(run_info_model.key.id())
     return msg
 
-  def Set(self, msg, id):
+  def Set(self, msg, id, request=None):
+    auth.ensure_recognized_user(request=request)
     run_info_model = models.RunInfoModel.Get(id)
     for name in models.RunInfoUserFields:
       setattr(run_info_model.msg, name, getattr(msg, name))

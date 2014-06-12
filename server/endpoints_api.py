@@ -7,6 +7,8 @@ Exports a WSGI application to serve the Google Cloud Endpoints API for RunInfo.
   wsgi_app: A WSGI application for the RunInfo API.
 """
 
+from google.appengine.ext.ndb import Key
+
 
 from . import auth
 from . import models
@@ -18,6 +20,12 @@ from protorpc import messages
 from protorpc import remote
 
 package = "com.appspot.ng-dash"
+
+
+class Error(Exception):
+  pass
+
+
 
 api = endpoints.api(name="ngdash", version="v0.1")
 
@@ -67,7 +75,7 @@ class RunInfoApi(remote.Service):
                     auth_level=endpoints.AUTH_LEVEL.REQUIRED,
                     allowed_client_ids=auth.ALLOWED_CLIENT_IDS)
   def new_run(self, request):
-    auth.ensure_endpoints_user_is_admin()
+    auth.ensure_recognized_user()
     try:
       return run_info_handler.Create(request)
     except (IndexError, TypeError):
@@ -80,18 +88,33 @@ auth_api = endpoints.api(name="ngdash_auth", version="v0.1",
                          allowed_client_ids=auth.ALLOWED_CLIENT_IDS)
 
 
+# This service should only be open to superadmins.  It allows you to create and
+# reset admin users.
 @auth_api.api_class(resource_name="auth", path="auth")
 class AuthApi(remote.Service):
   @endpoints.method(models.ApiUser, models.ApiUser,
                     path="register_api_key", http_method="POST",
                     name="registerApiKey")
-  def update_api_user(self, request):
-    auth.ensure_endpoints_user_is_admin()
-    user = models.ApiUserModel.get_by_email(request.email)
-    if not user:
-      user = models.ApiUser()
-      user.secret_token = auth.create_secret_token()
-      # TODO
+  def recreate_api_user(self, api_user):
+    auth.ensure_recognized_user(require_admin=True)
+    if not api_user.email:
+      raise Error("recreate_api_user: E-mail cannot be blank")
+    db_key = Key(models.ApiUserModel, api_user.email)
+    api_user_model = db_key.get()
+    if api_user_model:
+      if (api_user.secret and
+          api_user_model.msg.secret != api_user.secret):
+        raise Error("Can't set a custom secret. If you want a new one, just clear it and the server will generate a new one for you.")
+    else:
+      api_user_model = models.ApiUserModel(msg=api_user)
+      api_user_model.key = db_key
+    secret = api_user.secret
+    if not api_user.secret:
+      print("ckck: temp new token=" + auth.create_secret_token())
+      api_user_model.msg.secret = auth.create_secret_token()
+      print("ckck: new secret = " + api_user_model.msg.secret)
+    api_user_model.put()
+    return api_user_model.msg
 
 
 
