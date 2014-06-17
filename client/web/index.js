@@ -9,7 +9,9 @@ var G = {
   runs: [],
   singleRunSha: null,
   errorMsg: "",
-  asyncQueue: []
+  asyncQueue: [],
+  requestDigest: false,
+  digest: null
 };
 
 var ngDashApi = null;
@@ -17,7 +19,6 @@ var ngDashApi = null;
 function defaultCompare(a, b) {
   return (a == b) ? 0 : (a < b) ? -1 : 1;
 }
-
 
 function flattenNameValues(data, result, prefix) {
   result = result ? result : [];
@@ -74,26 +75,36 @@ function onGapiLoad() {
 }
 
 
+// Lazy man's autodigest/async queue. :(
+function onFrame() {
+  if (ngDashApi && G.asyncQueue.length > 0) {
+    G.asyncQueue.forEach(function(fn) {fn();});
+    G.asyncQueue = [];
+    G.requestDigest = true;
+  }
+  if (G.requestDigest && G.digest) {
+    G.requestDigest = false;
+    G.digest();
+  }
+  window.requestAnimationFrame(onFrame);
+}
+
+onFrame();
+
+
+// Angular Stuff.
+
 var module = angular.module('ngDash', ['ngRoute']);
 
 module.controller('MainController', ['$scope', function MainController($scope) {
     $scope.G = G;
-
-    // Lazy man's autodigest/async queue. :(
-    function onFrame() {
-      if (ngDashApi) {
-        G.asyncQueue.forEach(function(fn) {fn();});
-        G.asyncQueue = [];
-      }
-      $scope.$digest();
-      window.requestAnimationFrame(onFrame);
-    };
-    window.requestAnimationFrame(onFrame);
+    G.digest = $scope.$digest.bind($scope);
 }]);
 
 
 function onRunsLoaded(resp) {
   G.loading = false;
+  G.requestDigest = true;
   if (!resp.code) {
     if (resp.items) {
       G.runs = resp.items;
