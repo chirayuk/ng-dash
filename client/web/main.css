@@ -1,0 +1,11 @@
+body {
+  margin-left: 2em;
+}
+
+td {
+  padding-right: 1em;
+}
+
+ul.runs > li {
+  padding-bottom: 4em;
+}

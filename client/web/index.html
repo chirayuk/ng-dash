@@ -1,11 +1,118 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html ng-app="ngDash">
   <head>
     <meta charset="utf-8">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="all.css">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Sample Report (ng-dash)</title>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.13/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.0-beta.13/angular-route.min.js"></script>
+    <script src="/index.js"></script>
+    <script src="https://apis.google.com/js/client.js?onload=onGapiLoad"></script>
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href="/main.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body>
-    Nothing to see here.
-  </body>
-</html>
+  <body ng-controller="MainController"><div class="wrapper">
+    <div ng-view></div>
+    <div ng-if="G.errorMsg">
+      <b>ERROR:</b> <span style="color:red" ng-bind="G.errorMsg"></span>
+    </div>
+  </div>
+
+
+  <script type="text/ng-template" id="/overview.html">
+    <h1>ng-dash</h1><br>
+
+    This is a simple frontend for the <a
+    href="https://github.com/chirayuk/ng-dash">ng-dash</a> metrics backend
+    (work in progress, can currently only query by commit SHA.<br><br>Try these
+    links:<br>
+
+    <ul>
+      <li><a href="/all">All Runs</a></li>
+      <li><a href="/commit/{{SHA}}">By {{SHA}}</a>  
+      <input ng-model="SHA" placeholder="Enter full commit SHA">  e.g. <a
+      href="/commit/fb2aa60a584dd4b2bbb3d30e8fcd4c588f8669ed">fb2aa60</a></li>
+    </ul>
+  </script>
+
+
+  <script type="text/ng-template" id="/all.html">
+    <h1>ng-dash – All Runs</h1><br>
+
+    <div ng-show="G.loading">
+      <h4>Loading …</h4>
+    </div>
+    <div ng-if="G.runs">
+      <ul class="runs" ng-repeat="run in G.runs">
+        <li>
+          <div run="run"></div>
+        </li>
+      </ul>
+    </div>
+  </script>
+
+  <script type="text/ng-template" id="/commit.html">
+    <h1>Runs for SHA {{ G.singleRunSha}}</h1><br>
+
+    <div ng-show="G.loading">
+      <h4>Loading …</h4>
+    </div>
+    <div ng-if="G.runs">
+      <ul class="runs" ng-repeat="run in G.runs">
+        <li>
+          <div run="run"></div>
+        </li>
+      </ul>
+    </div>
+  </script>
+
+
+  <script type="text/ng-template" id="/run.html">
+    <div>
+      <h4>
+        commit <a href="https://github.com/angular/angular.dart/commit/{{run.commit_sha}}">{{run.commit_sha}}</a>
+        on {{run.creation_timestamp | utcTimestampToLocalDate | date:'medium'}}
+        by {{run.creator_email}}
+      </h4>
+      <div run-data="run.data" style="margin-left:-2em;"></div>
+    </div>
+  </script>
+
+  <script type="text/ng-template" id="/nameValues.html">
+    <table ng-if="data">
+      <!--
+         - <thead>
+         -   <td>Name</td>
+         -   <td>Value</td>
+         - </thead>
+         -->
+      <tbody>
+        <tr ng-repeat="row in data">
+          <td ng-bind="row.name"></td>
+          <td ng-bind="row.value"></td>
+        </tr>
+      </tbody>
+    </table>
+  </script>
+
+
+  <script type="text/ng-template" id="/runData.html">
+    <div>
+      <h4>{{data.name}}</h4>
+      <div style="margin-left: 2em;">
+        <div name-values="data.dimensions"></div>
+        <div name-values="data.metrics"></div>
+        <div ng-if="data.children">
+          <div ng-repeat="child in data.children">
+            <div ng-init="data=child">
+              <div ng-include="'/runData.html'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+</body></html>

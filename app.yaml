@@ -38,7 +38,7 @@ handlers:
   script: server.app.wsgi_app
   secure: always
 
-- url: (/|/index.html)
+- url: /(index.html|all|commit/[a-f0-9]{40})?$
   static_files: client/web/index.html
   upload: client/web/index.html
 
